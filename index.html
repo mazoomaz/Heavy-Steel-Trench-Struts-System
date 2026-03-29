@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <title>Heavy Steel - شركة الحديد الثقيل</title>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, sans-serif; background: #f4f7f6; padding: 10px; direction: rtl; margin: 0; transition: all 0.3s; }
+        .card { background: white; max-width: 1000px; margin: auto; padding: 20px; border-radius: 12px; box-shadow: 0 5px 20px rgba(0,0,0,0.1); position: relative; }
+        .lang-switch { position: absolute; top: 20px; left: 20px; }
+        .lang-btn { background: #3498db; color: white; border: none; padding: 8px 15px; border-radius: 5px; cursor: pointer; font-weight: bold; }
+        .input-row { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; background: #eef2f3; padding: 15px; border-radius: 8px; margin-bottom: 15px; }
+        label { font-weight: bold; display: block; margin-bottom: 2px; font-size: 12px; }
+        input, select { width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 5px; font-size: 13px; box-sizing: border-box; }
+        button { border: none; padding: 12px; border-radius: 8px; font-size: 16px; cursor: pointer; font-weight: bold; width: 100%; transition: 0.3s; }
+        .btn-calc { background: #27ae60; color: white; margin-top: 5px; }
+        .btn-print { background: #34495e; color: white; display: none; margin-top: 10px; }
+        .main-grid { display: none; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px; }
+        .drawing-card { border: 1px solid #000; background: #fff; text-align: center; display: flex; flex-direction: column; justify-content: space-between; }
+        .drawing-card h4 { background: #34495e; color: white; margin: 0; padding: 4px; font-size: 12px; }
+        .svg-wrap { flex-grow: 1; display: flex; align-items: center; justify-content: center; padding: 10px; }
+        .large-draw { min-height: 480px; }
+        .small-draw { min-height: 280px; border-style: dashed; }
+        svg { width: 100%; height: auto; max-height: 450px; }
+        .hole-label { font-size: 15px; fill: #2c3e50; font-weight: 900; }
+        .total-dim-text { font-size: 16px; font-weight: bold; fill: #000; }
+        .c-box { margin: 5px auto; padding: 5px; background: #fff9c4; border: 1px dashed #fbc02d; font-weight: bold; color: #d35400; font-size: 15px; width: 90%; }
+        .table-section { margin-top: 15px; display: none; }
+        table { width: 100%; border-collapse: collapse; border: 2px solid #34495e; background: #fff; }
+        th { background: #34495e; color: white; padding: 6px; font-size: 13px; }
+        td { border: 1px solid #ddd; padding: 6px; text-align: center; font-weight: bold; font-size: 14px; }
+
+        body.en { direction: ltr; }
+        body.en .lang-switch { left: auto; right: 20px; }
+
+        @media print {
+            @page { size: A4 portrait; margin: 0.5cm; }
+            body { background: white; padding: 0; margin: 0; }
+            .no-print { display: none !important; }
+            .card { box-shadow: none; border: 4px double #34495e; width: 100%; padding: 15px; margin: 0; box-sizing: border-box; min-height: 28cm; zoom: 85%; }
+            .main-grid { display: grid !important; }
+            .table-section { display: block !important; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="card">
+    <div class="lang-switch no-print">
+        <button class="lang-btn" onclick="toggleLanguage()" id="langBtn">English</button>
+    </div>
+
+    <div style="text-align: center; margin-bottom: 20px; border-bottom: 3px double #34495e; padding-bottom: 10px;">
+        <h1 id="t_company" style="color: #2c3e50; margin: 0; font-size: 28px;">شركة الحديد الثقيل - Heavy Steel</h1>
+    </div>
+
+    <div class="no-print">
+        <h2 id="t_sub" style="text-align: center; margin:0 0 10px 0;">نظام تصميم الجاك الشامل</h2>
+        <div class="input-row">
+            <div><label id="l_close">إغلاق (سم)</label><input type="number" id="closeLen" value="150"></div>
+            <div><label id="l_open">فتح (سم)</label><input type="number" id="openLen" value="250"></div>
+            <div><label id="l_clear">خلوص (سم)</label><input type="number" id="clearance" value="3"></div>
+            <div><label id="l_holes">عدد الثقوب</label><input type="number" id="holeCount" value="4"></div>
+            <div><label id="l_head">الرأس (سم)</label>
+                <select id="headSize">
+                    <option value="16" class="head-opt">16 سم</option>
+                    <option value="12" class="head-opt">12 سم</option>
+                </select>
+            </div>
+        </div>
+        <button id="btn_calc" class="btn-calc" onclick="drawSystem()">توليد المخطط الهندسي</button>
+    </div>
+
+    <div id="headerInfo" style="display:none; border-bottom: 2px solid #000; padding-bottom: 5px; margin-bottom: 10px;">
+        <h3 id="t_plan_title" style="margin:0; text-align:center;">مخطط تشغيل جاك ترنش بوكس (Trench Box)</h3>
+        <p style="text-align:center; font-weight:bold; margin:5px 0;">
+            <span id="txt_close">إغلاق</span>: <span id="h_close"></span> | 
+            <span id="txt_open">فتح</span>: <span id="h_open"></span> | 
+            <span id="txt_clear">خلوص</span>: <span id="h_clear"></span> | 
+            <span id="txt_tube">تيوب</span>: <span id="h_tube" style="color:red"></span> | 
+            <span id="txt_head">رأس</span>: <span id="h_head"></span>
+        </p>
+    </div>
+
+    <div id="mainGrid" class="main-grid">
+        <div class="drawing-card large-draw">
+            <h4 id="t_female_card">تيوب الأنثى (القياس من الرأس)</h4>
+            <div id="fSVG" class="svg-wrap"></div>
+            <div class="c-box">
+                <span id="txt_dist_f">المسافة بين طرف التيوب والثقب الأخير</span> : 
+                <span id="c1_f_box"></span> <span class="unit-text">سم</span>
+            </div>
+        </div>
+        <div class="drawing-card large-draw">
+            <h4 id="t_male_card">تيوب الذكر (القياس من طرف التيوب)</h4>
+            <div id="mSVG" class="svg-wrap"></div>
+            <div class="c-box">
+                <span id="txt_dist_m">مسافة C من نهاية تيوب الذكر للثقب</span> : 
+                <span id="c1_m_box"></span> <span class="unit-text">سم</span>
+            </div>
+        </div>
+        <div class="drawing-card small-draw">
+            <h4 id="t_close_status">وضعية الإغلاق</h4>
+            <div id="cSVG" class="svg-wrap"></div>
+        </div>
+        <div class="drawing-card small-draw">
+            <h4 id="t_open_status">وضعية الفتح</h4>
+            <div id="oSVG" class="svg-wrap"></div>
+        </div>
+    </div>
+
+    <div id="tableArea" class="table-section">
+        <h4 id="t_table_title" style="text-align: center; margin: 10px 0 5px 0; color: #1a73e8;">دليل أطوال التشغيل (الأطوال عند كل ثقب)</h4>
+        <table>
+            <thead>
+                <tr>
+                    <th id="th_1">رقم الثقب</th>
+                    <th id="th_2">موقع الثقب في الأنثى (T)</th>
+                    <th id="th_3">الطول الكلي للجاك الناتج</th>
+                    <th id="th_4">الحالة</th>
+                </tr>
+            </thead>
+            <tbody id="tableBody"></tbody>
+        </table>
+    </div>
+    <!-- تم تحديث الزر ليشمل الحفظ والطباعة -->
+    <button id="printBtn" class="btn-print no-print" onclick="window.print()">حفظ / طباعة المخطط والدليل 📄</button>
+</div>
+
+<script>
+    let currentLang = 'ar';
+    const translations = {
+        ar: {
+            langBtn: "English",
+            company: "شركة الحديد الثقيل - Heavy Steel",
+            sub: "نظام تصميم الجاك الشامل",
+            l_close: "إغلاق (سم)", l_open: "فتح (سم)", l_clear: "خلوص (سم)", l_holes: "عدد الثقوب", l_head: "الرأس (سم)",
+            btn_calc: "توليد المخطط الهندسي",
+            plan_title: "مخطط تشغيل جاك ترنش بوكس (Trench Box)",
+            txt_close: "إغلاق", txt_open: "فتح", txt_clear: "خلوص", txt_tube: "تيوب", txt_head: "رأس",
+            female_card: "تيوب الأنثى (القياس من الرأس)", male_card: "تيوب الذكر (القياس من طرف التيوب)",
+            close_status: "وضعية الإغلاق", open_status: "وضعية الفتح",
+            dist_f: "المسافة بين طرف التيوب والثقب الأخير", dist_m: "مسافة C من نهاية تيوب الذكر للثقب",
+            table_title: "دليل أطوال التشغيل (الأطوال عند كل ثقب)",
+            th_1: "رقم الثقب", th_2: "موقع الثقب في الأنثى (T)", th_3: "الطول الكلي للجاك الناتج", th_4: "الحالة",
+            print: "حفظ / طباعة المخطط والدليل 📄",
+            unit: "سم", tube_label: "التيوب", total_label: "الإجمالي",
+            hole_word: "ثقب", status_close: "إغلاق", status_max: "فتح أقصى"
+        },
+        en: {
+            langBtn: "العربية",
+            company: "Heavy Steel Company",
+            sub: "Universal Jack Design System",
+            l_close: "Close (cm)", l_open: "Open (cm)", l_clear: "Clearance (cm)", l_holes: "Hole Count", l_head: "Head (cm)",
+            btn_calc: "Generate Engineering Plan",
+            plan_title: "Trench Box Jack Operation Plan",
+            txt_close: "Close", txt_open: "Open", txt_clear: "Clearance", txt_tube: "Tube", txt_head: "Head",
+            female_card: "Female Tube (Measure from Head)", male_card: "Male Tube (Measure from End)",
+            close_status: "Closed Position", open_status: "Opened Position",
+            dist_f: "Distance between tube end and last hole", dist_m: "Distance C from male end to hole",
+            table_title: "Operation Length Guide (Lengths per Hole)",
+            th_1: "Hole No.", th_2: "Hole Position in Female (T)", th_3: "Total Resulting Length", th_4: "Status",
+            print: "Save / Print Plan & Guide 📄",
+            unit: "cm", tube_label: "Tube", total_label: "Total",
+            hole_word: "Hole", status_close: "Closed", status_max: "Max Open"
+        }
+    };
+
+    function toggleLanguage() {
+        currentLang = currentLang === 'ar' ? 'en' : 'ar';
+        document.body.className = currentLang === 'en' ? 'en' : '';
+        document.documentElement.dir = currentLang === 'ar' ? 'rtl' : 'ltr';
+        
+        const t = translations[currentLang];
+        document.getElementById('langBtn').innerText = t.langBtn;
+        document.getElementById('t_company').innerText = t.company;
+        document.getElementById('t_sub').innerText = t.sub;
+        document.getElementById('l_close').innerText = t.l_close;
+        document.getElementById('l_open').innerText = t.l_open;
+        document.getElementById('l_clear').innerText = t.l_clear;
+        document.getElementById('l_holes').innerText = t.l_holes;
+        document.getElementById('l_head').innerText = t.l_head;
+        document.getElementById('btn_calc').innerText = t.btn_calc;
+        document.getElementById('t_plan_title').innerText = t.plan_title;
+        document.getElementById('txt_close').innerText = t.txt_close;
+        document.getElementById('txt_open').innerText = t.txt_open;
+        document.getElementById('txt_clear').innerText = t.txt_clear;
+        document.getElementById('txt_tube').innerText = t.txt_tube;
+        document.getElementById('txt_head').innerText = t.txt_head;
+        document.getElementById('t_female_card').innerText = t.female_card;
+        document.getElementById('t_male_card').innerText = t.male_card;
+        document.getElementById('t_close_status').innerText = t.close_status;
+        document.getElementById('t_open_status').innerText = t.open_status;
+        document.getElementById('txt_dist_f').innerText = t.dist_f;
+        document.getElementById('txt_dist_m').innerText = t.dist_m;
+        document.getElementById('t_table_title').innerText = t.table_title;
+        document.getElementById('th_1').innerText = t.th_1;
+        document.getElementById('th_2').innerText = t.th_2;
+        document.getElementById('th_3').innerText = t.th_3;
+        document.getElementById('th_4').innerText = t.th_4;
+        document.getElementById('printBtn').innerText = t.print;
+
+        const headOpts = document.querySelectorAll('.head-opt');
+        headOpts.forEach(opt => { opt.innerText = opt.value + ' ' + t.unit; });
+
+        const unitLabels = document.querySelectorAll('.unit-text');
+        unitLabels.forEach(el => el.innerText = t.unit);
+
+        if (document.getElementById('mainGrid').style.display === 'grid') drawSystem();
+    }
+
+    function drawSystem() {
+        const t = translations[currentLang];
+        const close = parseFloat(document.getElementById('closeLen').value);
+        const open = parseFloat(document.getElementById('openLen').value);
+        const clear = parseFloat(document.getElementById('clearance').value);
+        const count = parseInt(document.getElementById('holeCount').value);
+        const H = parseFloat(document.getElementById('headSize').value);
+
+        if (!close || !open || isNaN(clear) || count < 2) return;
+
+        let L = close - (H * 2) - clear;
+        let moveRange = open - close;
+        let overlapValue = (H * 2 + (L * 2)) - open;
+        let c1 = Math.round(overlapValue / 2);
+
+        document.getElementById('h_close').innerText = close;
+        document.getElementById('h_open').innerText = open;
+        document.getElementById('h_clear').innerText = clear;
+        document.getElementById('h_tube').innerText = Math.round(L);
+        document.getElementById('h_head').innerText = H;
+        document.getElementById('c1_f_box').innerText = c1;
+        document.getElementById('c1_m_box').innerText = c1;
+        document.getElementById('headerInfo').style.display = 'block';
+
+        const getHolePos = (idx) => {
+            let base = Math.floor(moveRange / (count - 1));
+            let rem = moveRange % (count - 1);
+            return (idx * base) + Math.min(idx, rem);
+        };
+
+        let tableRows = '';
+        for (let i = 0; i < count; i++) {
+            let move = getHolePos(i);
+            let currentTotal = close + move;
+            let T_val = c1 + clear + move;
+            let status = (i === 0) ? t.status_close : (i === count - 1 ? t.status_max : "-");
+            tableRows += `<tr><td>${t.hole_word} ${i + 1}</td><td>${Math.round(T_val)} ${t.unit}</td><td>${currentTotal} ${t.unit}</td><td>${status}</td></tr>`;
+        }
+        document.getElementById('tableBody').innerHTML = tableRows;
+
+        const svgDefs = `<defs><marker id="arrow" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="black" /></marker></defs>`;
+
+        const getHoles = (type) => {
+            let hContent = '';
+            let labelX = 220; 
+            let ltrStyle = 'style="direction: ltr; unicode-bidi: isolate;"';
+
+            if (type === 'M') {
+                let lastMove = getHolePos(count - 1);
+                let distFromHead = c1 + clear + lastMove;
+                let distFromEnd = L - distFromHead;
+                let y = 50 + (distFromHead / L * 400);
+                hContent += `<line x1="125" y1="${y}" x2="215" y2="${y}" stroke="#2980b9" stroke-dasharray="3" />
+                             <circle cx="125" cy="${y}" r="6" fill="black" stroke="black" />
+                             <text x="${labelX}" y="${y}" dominant-baseline="middle" text-anchor="start" ${ltrStyle} class="hole-label">C: ${Math.round(distFromEnd)}</text>`;
+            } else {
+                for (let i = 0; i < count; i++) {
+                    let move = getHolePos(i);
+                    let valFromHead = c1 + clear + move;
+                    let y = 50 + (valFromHead / L * 400);
+                    hContent += `<line x1="125" y1="${y}" x2="215" y2="${y}" stroke="#2980b9" stroke-dasharray="3" />
+                                 <circle cx="125" cy="${y}" r="6" fill="white" stroke="black" />
+                                 <text x="${labelX}" y="${y}" dominant-baseline="middle" text-anchor="start" ${ltrStyle} class="hole-label">T${i + 1}: ${Math.round(valFromHead)}</text>`;
+                }
+            }
+            return hContent;
+        };
+
+        const drawTube = (type) => {
+            let headTextX = currentLang === 'ar' ? 245 : 200; 
+            return `<svg viewBox="0 0 300 500">${svgDefs}<rect x="100" y="50" width="50" height="400" fill="#ecf0f1" stroke="black" stroke-width="2" /><path d="M 75 50 L 75 30 Q 75 10 95 10 L 155 10 Q 175 10 175 30 L 175 50 Z" fill="#7f8c8d" stroke="black" stroke-width="2" /><circle cx="125" cy="30" r="10" fill="white" stroke="black" /><line x1="190" y1="10" x2="190" y2="50" stroke="black" stroke-width="1.5" marker-start="url(#arrow)" marker-end="url(#arrow)" /><text x="${headTextX}" y="35" text-anchor="start" fill="black" font-weight="bold" font-size="14">${H} ${t.unit}</text>${getHoles(type)}<line x1="50" y1="50" x2="50" y2="450" stroke="black" marker-start="url(#arrow)" marker-end="url(#arrow)" /><text x="40" y="250" transform="rotate(-90 40,250)" font-weight="bold">${t.tube_label}: <tspan fill="red">${Math.round(L)}</tspan> ${t.unit}</text></svg>`;
+        };
+
+        const drawAssembly = (isOpen) => {
+            let total = isOpen ? open : close;
+            let femaleX = isOpen ? 280 : 105;
+            let clearanceGraphic = '';
+            if (!isOpen) {
+                clearanceGraphic = `
+                    <text x="97.5" y="60" text-anchor="middle" font-weight="bold" font-size="13">
+                        <tspan fill="black">${t.txt_clear}:</tspan> 
+                        <tspan fill="red">${clear}${t.unit}</tspan>
+                    </text>
+                    <line x1="90" y1="70" x2="105" y2="70" stroke="red" stroke-width="2" />
+                    <line x1="90" y1="65" x2="90" y2="75" stroke="red" stroke-width="2" />
+                    <line x1="105" y1="65" x2="105" y2="75" stroke="red" stroke-width="2" />
+                `;
+            }
+            return `<svg viewBox="0 0 600 200">${svgDefs}<path d="M 90 70 L 60 70 Q 50 70 50 80 L 50 120 Q 50 130 60 130 L 90 130 Z" fill="#7f8c8d" stroke="black" /><circle cx="70" cy="100" r="6" fill="white" stroke="black" /><rect x="90" y="85" width="220" height="30" fill="#bdc3c7" stroke="black" /><rect x="${femaleX}" y="80" width="220" height="40" fill="rgba(236, 240, 241, 0.6)" stroke="black" /><path d="M ${femaleX + 220} 70 L ${femaleX + 250} 70 Q ${femaleX + 260} 70 ${femaleX + 260} 80 L ${femaleX + 260} 120 Q ${femaleX + 260} 130 ${femaleX + 250} 130 L ${femaleX + 220} 130 Z" fill="#7f8c8d" stroke="black" /><circle cx="${femaleX + 240}" cy="100" r="6" fill="white" stroke="black" /><line x1="50" y1="160" x2="${femaleX + 260}" y2="160" stroke="black" stroke-width="1.5" marker-start="url(#arrow)" marker-end="url(#arrow)" /><text x="${(50 + femaleX + 260) / 2}" y="185" text-anchor="middle" class="total-dim-text">${t.total_label}: <tspan fill="red">${total}</tspan> ${t.unit}</text>${clearanceGraphic}</svg>`;
+        };
+
+        document.getElementById('fSVG').innerHTML = drawTube('F');
+        document.getElementById('mSVG').innerHTML = drawTube('M');
+        document.getElementById('cSVG').innerHTML = drawAssembly(false);
+        document.getElementById('oSVG').innerHTML = drawAssembly(true);
+        document.getElementById('mainGrid').style.display = 'grid';
+        document.getElementById('tableArea').style.display = 'block';
+        document.getElementById('printBtn').style.display = 'block';
+    }
+</script>
+</body>
+</html>
